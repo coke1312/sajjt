@@ -14,23 +14,27 @@
             font-family: Arial, sans-serif;
         }
 
-        #left-bar, #right-bar {
-            position: fixed;
-            top: 50%;
-            width: 5px;
-            height: 0;
-            background-color: green;
-            transform: translateY(-50%);
-        }
-
+        /* Left soundbar */
         #left-bar {
+            position: fixed;
+            top: 0;
             left: 0;
+            width: 5px;
+            height: 100%;
+            background-color: green;
         }
 
+        /* Right soundbar */
         #right-bar {
+            position: fixed;
+            top: 0;
             right: 0;
+            width: 5px;
+            height: 100%;
+            background-color: green;
         }
 
+        /* Play button */
         #play-button {
             position: absolute;
             top: 50%;
@@ -109,11 +113,11 @@
 
                 // Left bar reacts to the lower frequencies (bass)
                 const leftBarHeight = Math.max(0, dataArray[0] - 50); // Bass frequencies for left bar
-                leftBar.style.height = `${leftBarHeight}px`;
+                leftBar.style.height = `${leftBarHeight + (Math.sin(Date.now() / 100) * 20)}px`; // Adding sine wave motion for dynamic effect
 
                 // Right bar reacts to the higher frequencies (treble)
                 const rightBarHeight = Math.max(0, dataArray[bufferLength - 1] - 50); // Treble frequencies for right bar
-                rightBar.style.height = `${rightBarHeight}px`;
+                rightBar.style.height = `${rightBarHeight + (Math.cos(Date.now() / 100) * 20)}px`; // Dynamic sine wave motion
 
                 animationFrameId = requestAnimationFrame(animate);
             }
