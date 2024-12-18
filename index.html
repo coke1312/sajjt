@@ -3,164 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi! I'm Coke</title>
+    <title>Soundbars</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: #000;
-            color: #fff;
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             overflow: hidden;
-            position: relative;
+            background-color: black;
         }
 
-        h1 {
-            font-size: 6rem;
-            font-weight: 900;
-            margin: 0;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        #left-bar, #right-bar {
+            position: fixed;
+            top: 50%;
+            width: 5px;
+            height: 0;
+            background-color: green;
+            transform: translateY(-50%);
         }
 
-        .subtitle {
-            font-size: 1.5rem;
-            font-weight: 300;
-            color: #aaa;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-            margin-top: 10px;
+        #left-bar {
+            left: 0;
         }
 
-        .play-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1.2rem;
-            color: #fff;
-            background: linear-gradient(45deg, #5500ff, #ff00ff);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 15px rgba(85, 0, 255, 0.5);
-            transition: all 0.3s ease;
+        #right-bar {
+            right: 0;
         }
 
-        .play-button:hover {
-            box-shadow: 0 0 30px rgba(85, 0, 255, 0.8);
-        }
-
-        .visualizer {
+        #play-button {
             position: absolute;
-            width: 100%;
-            height: 200px;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            overflow: hidden;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
-
-        .visualizer.left {
-            transform: rotate(90deg);
-            top: 0;
-            left: -50%;
-        }
-
-        .visualizer.right {
-            transform: rotate(-90deg);
-            bottom: 0;
-            right: -50%;
-        }
-
-        .wave {
-            flex: 1;
-            height: 100%;
-            background: linear-gradient(180deg, #ff00ff, #5500ff);
-            border-radius: 50%;
-            transform: scaleY(0);
-            transform-origin: bottom;
-            box-shadow: 0 0 10px rgba(85, 0, 255, 0.8);
-            transition: transform 0.1s ease;
-        }
-
     </style>
 </head>
 <body>
-    <h1>Hi! I&#39;m Coke</h1>
-    <div class="subtitle">producer, artist, developer</div>
-    <button class="play-button" onclick="playAudio()">Play</button>
-
-    <div class="visualizer left"></div>
-    <div class="visualizer right"></div>
-
-    <audio id="audio" src="song.mp3"></audio>
+    <div id="play-button">Play</div>
+    <div id="left-bar"></div>
+    <div id="right-bar"></div>
 
     <script>
-        const audio = document.getElementById('audio');
-        const leftVisualizer = document.querySelector('.visualizer.left');
-        const rightVisualizer = document.querySelector('.visualizer.right');
+        const leftBar = document.getElementById('left-bar');
+        const rightBar = document.getElementById('right-bar');
+        const playButton = document.getElementById('play-button');
 
-        let audioContext, analyser, dataArray;
+        let audioContext, analyser, source, audioElement;
+        let animationFrameId;
 
-        function createAudioContext() {
+        playButton.addEventListener('click', () => {
+            if (!audioContext) {
+                startAudio();
+                playButton.textContent = 'Pause';
+            } else {
+                if (audioContext.state === 'running') {
+                    audioContext.suspend();
+                    playButton.textContent = 'Play';
+                } else {
+                    audioContext.resume();
+                    playButton.textContent = 'Pause';
+                }
+            }
+        });
+
+        function startAudio() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioContext.createMediaElementSource(audio);
             analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            analyser.smoothingTimeConstant = 0.3;
+
+            audioElement = new Audio('song.mp3');
+            audioElement.loop = true;
+            audioElement.play();
+
+            source = audioContext.createMediaElementSource(audioElement);
             source.connect(analyser);
             analyser.connect(audioContext.destination);
 
-            analyser.fftSize = 64;
+            updateSoundBars();
+        }
+
+        function updateSoundBars() {
             const bufferLength = analyser.frequencyBinCount;
-            dataArray = new Uint8Array(bufferLength);
+            const dataArray = new Uint8Array(bufferLength);
 
-            createWaves(leftVisualizer);
-            createWaves(rightVisualizer);
-        }
-
-        function createWaves(container) {
-            for (let i = 0; i < 32; i++) {
-                const wave = document.createElement('div');
-                wave.classList.add('wave');
-                container.appendChild(wave);
-            }
-        }
-
-        function playAudio() {
-            if (!audioContext) {
-                createAudioContext();
-            }
-            if (audio.paused) {
-                audio.play();
-                requestAnimationFrame(animateVisualizer);
-            } else {
-                audio.pause();
-            }
-        }
-
-        function animateVisualizer() {
-            if (!audio.paused) {
+            function animate() {
                 analyser.getByteFrequencyData(dataArray);
 
-                const leftWaves = leftVisualizer.querySelectorAll('.wave');
-                const rightWaves = rightVisualizer.querySelectorAll('.wave');
+                // Left bar reacts to the lower frequencies (bass)
+                const leftBarHeight = Math.max(0, dataArray[0] - 50); // Bass frequencies for left bar
+                leftBar.style.height = `${leftBarHeight}px`;
 
-                leftWaves.forEach((wave, index) => {
-                    const scale = dataArray[index] / 256;
-                    wave.style.transform = `scaleY(${scale * 2})`;
-                });
+                // Right bar reacts to the higher frequencies (treble)
+                const rightBarHeight = Math.max(0, dataArray[bufferLength - 1] - 50); // Treble frequencies for right bar
+                rightBar.style.height = `${rightBarHeight}px`;
 
-                rightWaves.forEach((wave, index) => {
-                    const scale = dataArray[index] / 256;
-                    wave.style.transform = `scaleY(${scale * 2})`;
-                });
-
-                requestAnimationFrame(animateVisualizer);
+                animationFrameId = requestAnimationFrame(animate);
             }
+
+            animate();
         }
     </script>
 </body>
