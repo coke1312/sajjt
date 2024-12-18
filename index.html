@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hi! I'm Coke</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 6rem;
+            font-weight: 900;
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #aaa;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            margin-top: 10px;
+        }
+
+        .play-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            color: #fff;
+            background: linear-gradient(45deg, #5500ff, #ff00ff);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 15px rgba(85, 0, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .play-button:hover {
+            box-shadow: 0 0 30px rgba(85, 0, 255, 0.8);
+        }
+
+        .visualizer {
+            position: absolute;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .visualizer-bar {
+            width: 20px;
+            height: 10%;
+            background: linear-gradient(45deg, #ff00ff, #5500ff);
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(85, 0, 255, 0.8);
+            animation: bounce 1s infinite ease-in-out;
+        }
+
+        .visualizer.top {
+            top: 0;
+        }
+
+        .visualizer.bottom {
+            bottom: 0;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: scaleY(0.5);
+            }
+            50% {
+                transform: scaleY(1.5);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Hi! I&#39;m Coke</h1>
+    <div class="subtitle">producer, artist, developer</div>
+    <button class="play-button" onclick="playAudio()">Play</button>
+
+    <div class="visualizer top">
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+    </div>
+
+    <div class="visualizer bottom">
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+    </div>
+
+    <audio id="audio" src="song.mp3"></audio>
+
+    <script>
+        const audio = document.getElementById('audio');
+        const barsTop = document.querySelectorAll('.visualizer.top .visualizer-bar');
+        const barsBottom = document.querySelectorAll('.visualizer.bottom .visualizer-bar');
+
+        let audioContext, analyser, dataArray;
+
+        function createAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContext.createMediaElementSource(audio);
+            analyser = audioContext.createAnalyser();
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            analyser.fftSize = 64;
+            const bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+        }
+
+        function playAudio() {
+            if (!audioContext) {
+                createAudioContext();
+            }
+            if (audio.paused) {
+                audio.play();
+                requestAnimationFrame(animateVisualizer);
+            } else {
+                audio.pause();
+            }
+        }
+
+        function animateVisualizer() {
+            if (!audio.paused) {
+                analyser.getByteFrequencyData(dataArray);
+
+                barsTop.forEach((bar, i) => {
+                    const height = dataArray[i] / 2;
+                    bar.style.height = `${height}%`;
+                });
+
+                barsBottom.forEach((bar, i) => {
+                    const height = dataArray[i + 5] / 2;
+                    bar.style.height = `${height}%`;
+                });
+
+                requestAnimationFrame(animateVisualizer);
+            }
+        }
+    </script>
+</body>
+</html>
+
