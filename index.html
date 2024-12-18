@@ -54,22 +54,33 @@
             box-shadow: 0 0 30px rgba(85, 0, 255, 0.8);
         }
 
-        .visualizer-bar {
+        .visualizer {
             position: absolute;
             width: 100%;
-            height: 10px;
-            background: linear-gradient(45deg, #ff00ff, #5500ff);
-            box-shadow: 0 0 15px rgba(85, 0, 255, 0.8);
+            height: 200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
         }
 
-        .visualizer-bar.top {
+        .visualizer.top {
             top: 0;
-            transform-origin: center top;
         }
 
-        .visualizer-bar.bottom {
+        .visualizer.bottom {
             bottom: 0;
-            transform-origin: center bottom;
+        }
+
+        .wave {
+            flex: 1;
+            height: 100%;
+            background: linear-gradient(45deg, #ff00ff, #5500ff);
+            margin: 0 1px;
+            transform: scaleY(0);
+            transform-origin: bottom;
+            box-shadow: 0 0 10px rgba(85, 0, 255, 0.8);
+            transition: transform 0.1s ease;
         }
 
     </style>
@@ -79,15 +90,15 @@
     <div class="subtitle">producer, artist, developer</div>
     <button class="play-button" onclick="playAudio()">Play</button>
 
-    <div class="visualizer-bar top"></div>
-    <div class="visualizer-bar bottom"></div>
+    <div class="visualizer top"></div>
+    <div class="visualizer bottom"></div>
 
     <audio id="audio" src="song.mp3"></audio>
 
     <script>
         const audio = document.getElementById('audio');
-        const topBar = document.querySelector('.visualizer-bar.top');
-        const bottomBar = document.querySelector('.visualizer-bar.bottom');
+        const topVisualizer = document.querySelector('.visualizer.top');
+        const bottomVisualizer = document.querySelector('.visualizer.bottom');
 
         let audioContext, analyser, dataArray;
 
@@ -101,6 +112,17 @@
             analyser.fftSize = 64;
             const bufferLength = analyser.frequencyBinCount;
             dataArray = new Uint8Array(bufferLength);
+
+            createWaves(topVisualizer);
+            createWaves(bottomVisualizer);
+        }
+
+        function createWaves(container) {
+            for (let i = 0; i < 32; i++) {
+                const wave = document.createElement('div');
+                wave.classList.add('wave');
+                container.appendChild(wave);
+            }
         }
 
         function playAudio() {
@@ -119,11 +141,18 @@
             if (!audio.paused) {
                 analyser.getByteFrequencyData(dataArray);
 
-                const scaleFactorTop = dataArray[1] / 256;
-                const scaleFactorBottom = dataArray[2] / 256;
+                const topWaves = topVisualizer.querySelectorAll('.wave');
+                const bottomWaves = bottomVisualizer.querySelectorAll('.wave');
 
-                topBar.style.transform = `scaleY(${scaleFactorTop * 10})`;
-                bottomBar.style.transform = `scaleY(${scaleFactorBottom * 10})`;
+                topWaves.forEach((wave, index) => {
+                    const scale = dataArray[index] / 256;
+                    wave.style.transform = `scaleY(${scale * 2})`;
+                });
+
+                bottomWaves.forEach((wave, index) => {
+                    const scale = dataArray[index] / 256;
+                    wave.style.transform = `scaleY(${scale * 2})`;
+                });
 
                 requestAnimationFrame(animateVisualizer);
             }
