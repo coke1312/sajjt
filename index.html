@@ -54,39 +54,22 @@
             box-shadow: 0 0 30px rgba(85, 0, 255, 0.8);
         }
 
-        .visualizer {
+        .visualizer-bar {
             position: absolute;
             width: 100%;
-            height: 50px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .visualizer-bar {
-            width: 20px;
-            height: 10%;
+            height: 10px;
             background: linear-gradient(45deg, #ff00ff, #5500ff);
-            border-radius: 5px;
             box-shadow: 0 0 15px rgba(85, 0, 255, 0.8);
-            animation: bounce 1s infinite ease-in-out;
         }
 
-        .visualizer.top {
+        .visualizer-bar.top {
             top: 0;
+            transform-origin: center top;
         }
 
-        .visualizer.bottom {
+        .visualizer-bar.bottom {
             bottom: 0;
-        }
-
-        @keyframes bounce {
-            0%, 100% {
-                transform: scaleY(0.5);
-            }
-            50% {
-                transform: scaleY(1.5);
-            }
+            transform-origin: center bottom;
         }
 
     </style>
@@ -96,28 +79,15 @@
     <div class="subtitle">producer, artist, developer</div>
     <button class="play-button" onclick="playAudio()">Play</button>
 
-    <div class="visualizer top">
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-    </div>
-
-    <div class="visualizer bottom">
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-        <div class="visualizer-bar"></div>
-    </div>
+    <div class="visualizer-bar top"></div>
+    <div class="visualizer-bar bottom"></div>
 
     <audio id="audio" src="song.mp3"></audio>
 
     <script>
         const audio = document.getElementById('audio');
-        const barsTop = document.querySelectorAll('.visualizer.top .visualizer-bar');
-        const barsBottom = document.querySelectorAll('.visualizer.bottom .visualizer-bar');
+        const topBar = document.querySelector('.visualizer-bar.top');
+        const bottomBar = document.querySelector('.visualizer-bar.bottom');
 
         let audioContext, analyser, dataArray;
 
@@ -149,15 +119,11 @@
             if (!audio.paused) {
                 analyser.getByteFrequencyData(dataArray);
 
-                barsTop.forEach((bar, i) => {
-                    const height = dataArray[i] / 2;
-                    bar.style.height = `${height}%`;
-                });
+                const scaleFactorTop = dataArray[1] / 256;
+                const scaleFactorBottom = dataArray[2] / 256;
 
-                barsBottom.forEach((bar, i) => {
-                    const height = dataArray[i + 5] / 2;
-                    bar.style.height = `${height}%`;
-                });
+                topBar.style.transform = `scaleY(${scaleFactorTop * 10})`;
+                bottomBar.style.transform = `scaleY(${scaleFactorBottom * 10})`;
 
                 requestAnimationFrame(animateVisualizer);
             }
@@ -165,4 +131,3 @@
     </script>
 </body>
 </html>
-
